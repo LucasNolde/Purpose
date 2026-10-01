@@ -22,7 +22,7 @@ const FIREBASE_CONFIG={apiKey:"AIzaSyBAlisLZU2QFcN8IVoQnFvnE4UbYCgnWbA",authDoma
   let ready,readyP=new Promise(r=>ready=r);
   let fs=null,auth=null,okCfg=FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey;
   if(okCfg){firebase.initializeApp(FIREBASE_CONFIG);fs=firebase.firestore();auth=firebase.auth();
-    try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}}
+}
   const wrapDoc=r=>({
     set:d=>r.set(JSON.parse(JSON.stringify(d))),update:d=>r.update(d),delete:()=>r.delete(),
     onSnapshot:(cb,err)=>r.onSnapshot({includeMetadataChanges:false},s=>cb({exists:s.exists,data:()=>s.data(),metadata:{hasPendingWrites:s.metadata.hasPendingWrites}}),e=>{denied(e);err&&err(e)})});
@@ -1230,7 +1230,7 @@ function openPaste(){
 let DL=null;
 function openBackups(){
   openSheet(`<h2>SAUVEGARDES</h2>
-   <p class="intro" style="margin-top:8px">Tout est déjà enregistré en ligne automatiquement, et l'appli marche aussi hors connexion. Ici, tu gardes une copie datée sur ton téléphone ou ton ordinateur, pour pouvoir revenir en arrière.</p>
+   <p class="intro" style="margin-top:8px">Tout est déjà enregistré en ligne automatiquement. Ici, tu gardes une copie datée sur ton téléphone ou ton ordinateur, pour pouvoir revenir en arrière.</p>
    <div class="row"><button class="btn rose" id="bkdl">Télécharger une sauvegarde</button></div>
    <label class="f">Revenir à une sauvegarde</label>
    <input type="file" id="bkfile" accept=".json,application/json">
