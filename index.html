@@ -31,6 +31,7 @@ const FIREBASE_CONFIG={apiKey:"AIzaSyBAlisLZU2QFcN8IVoQnFvnE4UbYCgnWbA",authDoma
   const user={id:async()=>auth.currentUser&&auth.currentUser.uid,can:async()=>true,
     profiles:async ids=>{const o={};await Promise.all(ids.map(async i=>{try{const s=await fs.doc("profils/"+i).get();if(s.exists)o[i]={name:s.data().name}}catch(e){}}));return o}};
   const downloads={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}};
+  const esc2=t=>String(t||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   function denied(e){if(e&&e.code==="permission-denied")gate("refus")}
   window.claude={use:async n=>{await readyP;return n==="db"?db:n==="user"?user:n==="downloads"?downloads:null}};
   function gate(state){
@@ -39,11 +40,14 @@ const FIREBASE_CONFIG={apiKey:"AIzaSyBAlisLZU2QFcN8IVoQnFvnE4UbYCgnWbA",authDoma
     const msg={login:"Connecte-toi avec ton compte Google pour ouvrir le scénario.",refus:"Ce compte n'a pas accès au scénario. Demande à Jimmy de t'ajouter, puis reconnecte-toi.",cfg:"L'application n'est pas encore reliée à sa base de données."}[state];
     g.innerHTML=`<div class="gbox"><img src="icon-192.png" alt="" width="96" height="96"><h1>PURPOSE</h1><p>${msg}</p>${state!=="cfg"?`<button class="btn rose" id="glogin">${state==="refus"?"Changer de compte":"Se connecter avec Google"}</button>`:""}</div>`;
     const b=document.getElementById("glogin");if(b)b.onclick=async()=>{const pr=new firebase.auth.GoogleAuthProvider();pr.setCustomParameters({prompt:"select_account"});
-      try{if(state==="refus")await auth.signOut();await auth.signInWithPopup(pr)}catch(e){if(e&&/popup/.test(e.code||""))auth.signInWithRedirect(pr);else alert("Connexion impossible : "+(e.message||e.code))}};
+      try{if(state==="refus")await auth.signOut();await auth.signInWithPopup(pr)}
+      catch(e){const c=(e&&e.code)||"";const box=g.querySelector("p");
+        if(/popup-blocked/.test(c))box.innerHTML="La fenêtre de connexion a été bloquée. Autorise les fenêtres pop-up pour ce site dans les réglages du navigateur, puis réessaie.";
+        else if(/popup-closed|cancelled-popup/.test(c))box.innerHTML="La fenêtre de connexion s'est fermée avant la fin. Réessaie.";
+        else box.innerHTML="Connexion impossible ("+esc2(c||e.message)+"). Sur iPhone, ouvre le lien dans Safari (pas depuis l'icône), connecte-toi, puis ajoute l'appli à l'écran d'accueil.";}};
   }
   document.addEventListener("DOMContentLoaded",()=>{
     if(!okCfg){gate("cfg");return}
-    auth.getRedirectResult().catch(()=>{});
     auth.onAuthStateChanged(async u=>{
       if(!u){gate("login");return}
       try{await fs.doc("profils/"+u.uid).set({name:u.displayName||u.email,email:u.email},{merge:true});gate("ok");ready()}
